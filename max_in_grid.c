@@ -42,6 +42,20 @@ int generate_random_values (const char *file_name, unsigned nx, unsigned ny)
 {
    printf ("Generate %u x %u values and dump them to %s...\n", nx, ny, file_name);
 
+   // Don't unecessarily regenerate the file
+   FILE *check_fp = fopen(file_name, "r");
+   if (check_fp) {
+      float fileNX, fileNY;
+
+      if (fscanf(check_fp, "%f %f", &fileNX, &fileNY) == 2) {
+         if (nx == fileNX && ny == fileNY) {
+            printf("File already exists with these dimensions.\n");
+            fclose(check_fp);
+         }  
+      } 
+      return 0;
+   }
+
    // Open/create output file
    FILE *fp = fopen (file_name, "w");
    if (!fp) {
@@ -277,18 +291,20 @@ int main (int argc, char *argv[])
 
    // Main part: repeated nrep times
    unsigned r;
+   value_grid_t value_grid;
+   pos_val_grid_t pos_val_grid;
+
+   // Load coordinates from disk to memory
+   if (load_values (input_file_name, &value_grid) != 0) {
+      fprintf (stderr, "Failed to load coordinates\n");
+      return EXIT_FAILURE;
+   }
+
+   // Relate pairs to coordinates
+   load_positions (value_grid, &pos_val_grid);
+
+
    for (r=0; r<nrep; r++) {
-      value_grid_t value_grid;
-      pos_val_grid_t pos_val_grid;
-
-      // Load coordinates from disk to memory
-      if (load_values (input_file_name, &value_grid) != 0) {
-         fprintf (stderr, "Failed to load coordinates\n");
-         return EXIT_FAILURE;
-      }
-
-      // Relate pairs to coordinates
-      load_positions (value_grid, &pos_val_grid);
 
       // Compute maximum (v1 and v2)
       const pos_val_t *pos_v1_max = find_max_v1 (&pos_val_grid);
@@ -301,9 +317,10 @@ int main (int argc, char *argv[])
               pos_v2_max->x, pos_v2_max->y, pos_v2_max->v2);
 
       // Free allocated memory
-      free_pos_val_grid (pos_val_grid);
-      free_value_grid (value_grid);
    }
+
+   free_pos_val_grid (pos_val_grid);
+   free_value_grid (value_grid);
 
    // Delete text file
    remove (input_file_name);
