@@ -323,7 +323,7 @@ int main (int argc, char *argv[])
    free_value_grid (value_grid);
 
    // Delete text file
-   remove (input_file_name);
+   //remove (input_file_name);
 
    return EXIT_SUCCESS;
 }
