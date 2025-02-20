@@ -229,6 +229,35 @@ pos_val_t *find_max_v2 (const pos_val_grid_t *pv_grid)
    return pv_grid->entries [pv_grid->nx * pv_grid->ny - 1];
 }
 
+
+void find_max(const pos_val_grid_t *pv_grid) {
+   unsigned x1, y1;
+   unsigned x2, y2;
+   float v1_max = 0.0;
+   float v2_max = 0.0;
+
+
+   for (int i = 0; i < pv_grid->nx; i++) {
+      for (int j = 0; j < pv_grid->ny; j++) {
+         if (pv_grid->entries[i]->v1 > v1_max) {
+            v1_max = pv_grid->entries[i]->v1;
+            x1 = pv_grid->entries[i]->x;
+            y1 = pv_grid->entries[i]->y;
+         }
+         if (pv_grid->entries[i]->v2 > v2_max) {
+            v2_max = pv_grid->entries[i]->v2;
+            x2 = pv_grid->entries[i]->x;
+            y2 = pv_grid->entries[i]->y;
+         }
+      }
+   }
+
+   printf ("Max v1: x=%u, y=%u, v1=%f\n",
+              x1, y1, v1_max);
+   printf ("Max v2: x=%u, y=%u, v2=%f\n",
+              x2, y2, v2_max);
+}
+
 // Frees memory that was allocated to save distances
 void free_pos_val_grid (pos_val_grid_t pv_grid)
 {
@@ -308,16 +337,19 @@ int main (int argc, char *argv[])
       // Relate pairs to coordinates
       load_positions (value_grid, &pos_val_grid);
 
+      find_max(&pos_val_grid);
+
+      /*
       // Compute maximum (v1 and v2)
       const pos_val_t *pos_v1_max = find_max_v1 (&pos_val_grid);
       const pos_val_t *pos_v2_max = find_max_v2 (&pos_val_grid);
-
+      
       // Print maximum (v1 and v2)
       printf ("Max v1: x=%u, y=%u, v1=%f\n",
               pos_v1_max->x, pos_v1_max->y, pos_v1_max->v1);
       printf ("Max v2: x=%u, y=%u, v2=%f\n",
               pos_v2_max->x, pos_v2_max->y, pos_v2_max->v2);
-
+      */
    }
 
    // Free allocated memory
