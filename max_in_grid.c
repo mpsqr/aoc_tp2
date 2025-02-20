@@ -300,11 +300,13 @@ int main (int argc, char *argv[])
       return EXIT_FAILURE;
    }
 
-   // Relate pairs to coordinates
-   load_positions (value_grid, &pos_val_grid);
+
 
 
    for (r=0; r<nrep; r++) {
+
+      // Relate pairs to coordinates
+      load_positions (value_grid, &pos_val_grid);
 
       // Compute maximum (v1 and v2)
       const pos_val_t *pos_v1_max = find_max_v1 (&pos_val_grid);
@@ -316,14 +318,14 @@ int main (int argc, char *argv[])
       printf ("Max v2: x=%u, y=%u, v2=%f\n",
               pos_v2_max->x, pos_v2_max->y, pos_v2_max->v2);
 
-      // Free allocated memory
    }
 
+   // Free allocated memory
    free_pos_val_grid (pos_val_grid);
    free_value_grid (value_grid);
 
    // Delete text file
-   //remove (input_file_name);
+   remove (input_file_name);
 
    return EXIT_SUCCESS;
 }
