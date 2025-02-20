@@ -102,7 +102,7 @@ int load_values (const char *file_name, value_grid_t *val_grid)
    // Load grid size from input file (first line)
    unsigned nx, ny;
    if (fgets (buf, sizeof buf, fp) != NULL &&
-       sscanf (buf, "%u %u", &nx, &ny) != 2) {
+      sscanf (buf, "%u %u", &nx, &ny) != 2) {
       fprintf (stderr, "Failed to parse the first line from the input file\n");
       fclose (fp);
       return 1;
@@ -154,30 +154,35 @@ int load_values (const char *file_name, value_grid_t *val_grid)
 }
 
 // Relate pairs to coordinates
-void load_positions (value_grid_t src, pos_val_grid_t *dst)
-{
-   dst->nx = src.nx;
-   dst->ny = src.ny;
+void load_positions(value_grid_t src, pos_val_grid_t *dst) {
+    dst->nx = src.nx;
+    dst->ny = src.ny;
 
-   sum_bytes += src.nx * src.ny * sizeof dst->entries[0];
-   dst->entries = malloc (src.nx * src.ny * sizeof dst->entries[0]);
+    // Allocate memory for entry pointers
+    sum_bytes += src.nx * src.ny * sizeof(dst->entries[0]);
+    dst->entries = malloc(src.nx * src.ny * sizeof(dst->entries[0]));
 
-   unsigned i, j;
-   for (i=0; i<src.nx; i++) {
-      for (j=0; j<src.ny; j++) {
-         const value_t *src_val = src.entries [i * src.ny + j];
+    // Allocate a contiguous block for pos_val_t structures
+    pos_val_t *all_entries = malloc(src.nx * src.ny * sizeof(pos_val_t));
+    sum_bytes += src.nx * src.ny * sizeof(pos_val_t);
 
-         pos_val_t *new_pos_val = malloc (sizeof new_pos_val[0]);
-         sum_bytes += sizeof *new_pos_val;
-         new_pos_val->x  = i;
-         new_pos_val->y  = j;
-         new_pos_val->v1 = src_val->v1;
-         new_pos_val->v2 = src_val->v2;
+    unsigned i, j;
+    for (i = 0; i < src.nx; i++) {
+        for (j = 0; j < src.ny; j++) {
+            const value_t *src_val = src.entries[i * src.ny + j];
 
-         dst->entries [i * src.ny + j] = new_pos_val;
-      }
-   }
+            // Assign from the preallocated block
+            pos_val_t *new_pos_val = &all_entries[i * src.ny + j];
+            new_pos_val->x = i;
+            new_pos_val->y = j;
+            new_pos_val->v1 = src_val->v1;
+            new_pos_val->v2 = src_val->v2;
+
+            dst->entries[i * src.ny + j] = new_pos_val;
+        }
+    }
 }
+
 
 // Compares two pos_val entries (to be used with qsort)
 int cmp_pv_entries_v1 (const void *a, const void *b)
@@ -259,22 +264,20 @@ void find_max(const pos_val_grid_t *pv_grid) {
 }
 
 // Frees memory that was allocated to save distances
-void free_pos_val_grid (pos_val_grid_t pv_grid)
+void free_pos_val_grid(pos_val_grid_t pv_grid)
 {
-   printf ("Free memory allocated for positions+values (%u x %u entries)...\n",
+    printf("Free memory allocated for positions+values (%u x %u entries)...\n",
            pv_grid.nx, pv_grid.ny);
 
-   unsigned i, j;
-   for (i=0; i<pv_grid.nx; i++) {
-      for (j=0; j<pv_grid.ny; j++) {
-         free (pv_grid.entries [i * pv_grid.ny + j]);
-         sum_bytes -= sizeof *(pv_grid.entries[0]);
-      }
-   }
+    // Free the contiguous block of pos_val_t structs
+    free(pv_grid.entries[0]);
+    sum_bytes -= pv_grid.nx * pv_grid.ny * sizeof(pos_val_t);
 
-   free (pv_grid.entries);
-   sum_bytes -= pv_grid.nx * pv_grid.ny * sizeof pv_grid.entries[0];
+    // Free the array of pointers
+    free(pv_grid.entries);
+    sum_bytes -= pv_grid.nx * pv_grid.ny * sizeof(pv_grid.entries[0]);
 }
+
 
 // Frees memory that was allocated to save points/coordinates
 void free_value_grid (value_grid_t val_grid)
